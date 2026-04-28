@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Playlist Exporter — Save your Spotify playlists</title>
+  <meta name="description" content="Copy and paste your Spotify playlist and export it as CSV, HTML or plain text. No login, no data stored, completely private.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green: #1DB954;
+      --green-dark: #158a3e;
+      --green-pale: #e8f8ee;
+      --black: #0a0a0a;
+      --off-white: #f7f6f2;
+      --warm-gray: #e8e6e0;
+      --mid-gray: #9e9b94;
+      --text: #1a1a18;
+      --text-muted: #6b6860;
+      --border: rgba(0,0,0,0.1);
+      --radius: 10px;
+      --radius-lg: 16px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--off-white);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(247,246,242,0.9);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-logo {
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .nav-logo span {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      margin-right: 8px;
+      vertical-align: middle;
+      position: relative;
+      top: -1px;
+    }
+
+    .nav-badge {
+      font-size: 11px;
+      font-family: 'DM Mono', monospace;
+      color: var(--green-dark);
+      background: var(--green-pale);
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(29,185,84,0.2);
+    }
+
+    /* HERO */
+    .hero {
+      padding: 5rem 2rem 4rem;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .hero-eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--mid-gray);
+      margin-bottom: 1.25rem;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      font-weight: 300;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      color: var(--black);
+      margin-bottom: 1.25rem;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--green-dark);
+    }
+
+    .hero-sub {
+      font-size: 16px;
+      color: var(--text-muted);
+      max-width: 480px;
+      line-height: 1.7;
+      margin-bottom: 2.5rem;
+    }
+
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      font-size: 12px;
+      font-family: 'DM Mono', monospace;
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      background: white;
+    }
+
+    /* MAIN TOOL */
+    .tool {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 2rem 6rem;
+    }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--mid-gray);
+      margin-bottom: .75rem;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    /* NAME INPUT */
+    .name-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .field-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      font-family: 'DM Mono', monospace;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      border: 1px solid var(--warm-gray);
+      border-radius: var(--radius);
+      padding: 9px 14px;
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      background: var(--off-white);
+      transition: border-color .15s;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--green);
+    }
+
+    /* TEXTAREA */
+    textarea {
+      width: 100%;
+      min-height: 160px;
+      border: 1px solid var(--warm-gray);
+      border-radius: var(--radius);
+      padding: 14px;
+      font-size: 13px;
+      font-family: 'DM Mono', monospace;
+      color: var(--text);
+      background: var(--off-white);
+      resize: vertical;
+      line-height: 1.6;
+      transition: border-color .15s;
+    }
+
+    textarea:focus { outline: none; border-color: var(--green); }
+    textarea::placeholder { color: var(--mid-gray); font-style: italic; }
+
+    .hint {
+      font-size: 12px;
+      color: var(--mid-gray);
+      margin-top: .6rem;
+      line-height: 1.5;
+    }
+
+    /* BUTTONS */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 1.25rem;
+    }
+
+    .btn {
+      padding: 9px 20px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: white;
+      font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      cursor: pointer;
+      transition: all .15s;
+      font-weight: 400;
+    }
+
+    .btn:hover { background: var(--warm-gray); }
+
+    .btn.primary {
+      background: var(--green);
+      color: white;
+      border-color: var(--green);
+      font-weight: 500;
+    }
+
+    .btn.primary:hover { background: var(--green-dark); border-color: var(--green-dark); }
+
+    .btn.ghost {
+      background: transparent;
+      color: var(--text-muted);
+      border-color: transparent;
+      font-size: 12px;
+    }
+
+    .btn.ghost:hover { color: var(--text); background: var(--warm-gray); }
+
+    /* RESULTS */
+    #results { display: none; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 1.25rem;
+    }
+
+    .stat-card {
+      background: var(--off-white);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+      border: 1px solid var(--border);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-family: 'DM Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--mid-gray);
+      margin-bottom: .35rem;
+    }
+
+    .stat-value {
+      font-size: 22px;
+      font-weight: 300;
+      color: var(--black);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .stat-value.sm { font-size: 14px; font-weight: 400; padding-top: 4px; }
+
+    /* TABLE */
+    .table-wrap {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: white;
+      margin-bottom: 1.25rem;
+    }
+
+    .table-scroll { max-height: 420px; overflow-y: auto; }
+
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+
+    thead { position: sticky; top: 0; z-index: 2; }
+
+    th {
+      background: var(--off-white);
+      font-size: 10px;
+      font-family: 'DM Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--mid-gray);
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 400;
+    }
+
+    td {
+      font-size: 13px;
+      padding: 9px 14px;
+      border-bottom: 1px solid rgba(0,0,0,0.04);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--off-white); }
+
+    .col-num { width: 44px; color: var(--mid-gray); font-family: 'DM Mono', monospace; font-size: 11px; }
+    .col-song { width: 52%; }
+    .col-artist { color: var(--text-muted); }
+
+    /* EXPORT */
+    .export-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+    }
+
+    .export-title {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: .35rem;
+      color: var(--black);
+    }
+
+    .export-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+      line-height: 1.5;
+    }
+
+    .export-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+    }
+
+    .export-btn {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 1rem 1.1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--off-white);
+      cursor: pointer;
+      text-align: left;
+      transition: all .15s;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .export-btn:hover {
+      border-color: var(--green);
+      background: var(--green-pale);
+    }
+
+    .export-btn-icon {
+      font-size: 18px;
+      margin-bottom: 2px;
+    }
+
+    .export-btn-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .export-btn-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* HOW TO SECTION */
+    .how-to {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 2rem 5rem;
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .step {
+      display: flex;
+      gap: 1.25rem;
+      padding: 1.25rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .step:last-child { border-bottom: none; }
+
+    .step-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--green-dark);
+      background: var(--green-pale);
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .step-content h3 {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: .25rem;
+      color: var(--black);
+    }
+
+    .step-content p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      background: var(--warm-gray);
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: var(--text);
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+      font-size: 12px;
+      color: var(--mid-gray);
+      font-family: 'DM Mono', monospace;
+      line-height: 1.8;
+    }
+
+    footer a { color: var(--mid-gray); text-decoration: underline; }
+
+    /* DIVIDER */
+    .divider {
+      max-width: 680px;
+      margin: 0 auto 3rem;
+      padding: 0 2rem;
+    }
+
+    .divider-line {
+      border: none;
+      border-top: 1px solid var(--border);
+    }
+
+    .divider-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--mid-gray);
+      margin-bottom: .75rem;
+      margin-top: 3rem;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 520px) {
+      nav { padding: 1rem 1.25rem; }
+      .hero, .tool, .how-to { padding-left: 1.25rem; padding-right: 1.25rem; }
+      h1 { font-size: 1.8rem; }
+      .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .name-row { flex-direction: column; align-items: flex-start; }
+      .divider { padding-left: 1.25rem; padding-right: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-logo" href="#"><span></span>playlist exporter</a>
+    <div class="nav-badge">no login required</div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-eyebrow">Free · Private · No account needed</div>
+    <h1>Your playlists,<br><em>your way.</em></h1>
+    <p class="hero-sub">
+      Copy any Spotify playlist and export it as a CSV, HTML page, or plain text file.
+      Works with playlists of any size — even thousands of songs.
+      Nothing is uploaded anywhere.
+    </p>
+    <div class="pills">
+      <div class="pill">No Spotify login</div>
+      <div class="pill">No data stored</div>
+      <div class="pill">Runs in your browser</div>
+      <div class="pill">Free forever</div>
+    </div>
+  </section>
+
+  <!-- TOOL -->
+  <main class="tool">
+
+    <div class="card">
+      <div class="section-label">Step 1 — name your playlist (optional)</div>
+      <div class="name-row">
+        <label class="field-label" for="playlist-name">Playlist name</label>
+        <input type="text" id="playlist-name" placeholder="e.g. Road trip 2024, Workout mix...">
+      </div>
+
+      <div class="section-label">Step 2 — paste your playlist</div>
+      <textarea id="paste-input" placeholder="Paste your Spotify playlist here...
+
+How to copy from Spotify:
+  1. Open Spotify and go to your playlist
+  2. Click the first song, then Ctrl+A (or Cmd+A on Mac) to select all
+  3. Copy with Ctrl+C (or Cmd+C)
+  4. Click here and paste with Ctrl+V (or Cmd+V)"></textarea>
+      <div class="hint">Your data never leaves your device. Everything runs locally in your browser.</div>
+
+      <div class="btn-row">
+        <button class="btn primary" onclick="parsePlaylist()">Parse playlist</button>
+        <button class="btn" onclick="loadDemo()">Try a demo</button>
+        <button class="btn ghost" onclick="clearAll()">Clear</button>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="results">
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Songs</div>
+          <div class="stat-value" id="stat-songs">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Artists</div>
+          <div class="stat-value" id="stat-artists">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Top artist</div>
+          <div class="stat-value sm" id="stat-top">—</div>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th class="col-num">#</th>
+                <th class="col-song">Song</th>
+                <th class="col-artist">Artist</th>
+              </tr>
+            </thead>
+            <tbody id="track-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="export-card">
+        <div class="export-title">Export your playlist</div>
+        <div class="export-desc">Choose a format. Files download instantly to your device.</div>
+        <div class="export-options">
+          <button class="export-btn" onclick="exportCSV()">
+            <div class="export-btn-icon">📊</div>
+            <div class="export-btn-name">CSV file</div>
+            <div class="export-btn-desc">Opens in Excel, Numbers, or Google Sheets</div>
+          </button>
+          <button class="export-btn" onclick="exportHTML()">
+            <div class="export-btn-icon">🎨</div>
+            <div class="export-btn-name">HTML page</div>
+            <div class="export-btn-desc">A styled, shareable page you can keep forever</div>
+          </button>
+          <button class="export-btn" onclick="exportText()">
+            <div class="export-btn-icon">📄</div>
+            <div class="export-btn-name">Plain text</div>
+            <div class="export-btn-desc">Simple numbered list, works anywhere</div>
+          </button>
+          <button class="export-btn" onclick="copyToClipboard(this)">
+            <div class="export-btn-icon">📋</div>
+            <div class="export-btn-name">Copy to clipboard</div>
+            <div class="export-btn-desc">Paste directly into any app or document</div>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- HOW TO -->
+  <div class="divider">
+    <hr class="divider-line">
+    <div class="divider-label" style="margin-top: 2.5rem;">How it works</div>
+  </div>
+
+  <section class="how-to">
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Open your Spotify playlist</h3>
+          <p>Works on desktop Spotify (Windows or Mac). Open any playlist — yours or one you follow.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Select and copy all tracks</h3>
+          <p>Click any song in the list, then press <code>Ctrl+A</code> (Windows) or <code>Cmd+A</code> (Mac) to select everything. Then <code>Ctrl+C</code> / <code>Cmd+C</code> to copy.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Paste it above</h3>
+          <p>Click the text area above and press <code>Ctrl+V</code> / <code>Cmd+V</code> to paste. Hit "Parse playlist" and your tracks will appear instantly.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h3>Export in your preferred format</h3>
+          <p>Download as a CSV for Excel, a styled HTML page to keep, plain text, or just copy to your clipboard. All free, all instant.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Playlist Exporter — built as an open learning project</p>
+    <p style="margin-top:.35rem">Not affiliated with Spotify AB &nbsp;·&nbsp; No data is collected or stored</p>
+    <p style="margin-top:.35rem"><a href="https://github.com/" target="_blank" rel="noopener">View source on GitHub</a></p>
+  </footer>
+
+  <script>
+    let tracks = [];
+
+    function parsePlaylist() {
+      const raw = document.getElementById('paste-input').value.trim();
+      if (!raw) { alert('Please paste your playlist text first.'); return; }
+      tracks = parseText(raw);
+      if (tracks.length === 0) {
+        alert("Couldn't detect any tracks. Try clicking \"Try a demo\" to see the expected format, or make sure you copied from the Spotify desktop app.");
+        return;
+      }
+      renderResults();
+    }
+
+    function parseText(raw) {
+      const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 1);
+      const result = [];
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        // skip obvious header/metadata lines
+        const skipPatterns = /^(liked songs|playlist|tracks?|songs?|#|no\.|title|name|artist|album|duration|time|\d+\s+(track|song|item))/i;
+        if (skipPatterns.test(line) && line.length < 50) continue;
+
+        // format: "Song - Artist" or "Song – Artist"
+        const dashSplit = line.split(/\s+[-–—]\s+/);
+        if (dashSplit.length >= 2) {
+          result.push({ title: dashSplit[0].trim(), artist: dashSplit.slice(1).join(' – ').trim() });
+          continue;
+        }
+
+        // format: tab-separated
+        const tabSplit = line.split('\t');
+        if (tabSplit.length >= 2) {
+          result.push({ title: tabSplit[0].trim(), artist: tabSplit[1].trim() });
+          continue;
+        }
+
+        // format: song on one line, artist on next
+        if (i + 1 < lines.length) {
+          const next = lines[i + 1];
+          const nextIsArtist = next.length < 80 && !next.includes(' - ') && !next.includes(' – ');
+          if (nextIsArtist && line.length < 100) {
+            result.push({ title: line, artist: next });
+            i++;
+            continue;
+          }
+        }
+
+        result.push({ title: line, artist: '' });
+      }
+
+      return result.filter(t => t.title.length > 0);
+    }
+
+    function renderResults() {
+      document.getElementById('results').style.display = 'block';
+      document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      document.getElementById('stat-songs').textContent = tracks.length.toLocaleString();
+
+      const artistCounts = {};
+      tracks.forEach(t => {
+        if (t.artist) {
+          const key = t.artist.split(/[,&]/)[0].trim();
+          artistCounts[key] = (artistCounts[key] || 0) + 1;
+        }
+      });
+
+      const uniqueArtists = Object.keys(artistCounts).length;
+      document.getElementById('stat-artists').textContent = uniqueArtists.toLocaleString();
+
+      const top = Object.entries(artistCounts).sort((a, b) => b[1] - a[1])[0];
+      document.getElementById('stat-top').textContent = top ? `${top[0]} (${top[1]})` : '—';
+
+      const tbody = document.getElementById('track-table');
+      tbody.innerHTML = tracks.map((t, i) =>
+        `<tr>
+          <td class="col-num">${i + 1}</td>
+          <td class="col-song" title="${esc(t.title)}">${esc(t.title)}</td>
+          <td class="col-artist" title="${esc(t.artist)}">${esc(t.artist)}</td>
+        </tr>`
+      ).join('');
+    }
+
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function getPlaylistName() {
+      return document.getElementById('playlist-name').value.trim() || 'My playlist';
+    }
+
+    function exportCSV() {
+      const name = getPlaylistName();
+      const rows = [['#', 'Song', 'Artist', 'Notes']];
+      tracks.forEach((t, i) => rows.push([i + 1, t.title, t.artist, '']));
+      const csv = rows.map(r =>
+        r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')
+      ).join('\r\n');
+      download(name + '.csv', csv, 'text/csv;charset=utf-8;');
+    }
+
+    function exportText() {
+      const name = getPlaylistName();
+      const lines = [name, '='.repeat(Math.min(name.length, 60)), ''];
+      tracks.forEach((t, i) => {
+        lines.push(`${i + 1}. ${t.title}${t.artist ? ' — ' + t.artist : ''}`);
+      });
+      lines.push('', `${tracks.length} songs total`);
+      download(name + '.txt', lines.join('\n'), 'text/plain;charset=utf-8;');
+    }
+
+    function exportHTML() {
+      const name = getPlaylistName();
+      const date = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+      const rows = tracks.map((t, i) =>
+        `<tr><td>${i + 1}</td><td>${esc(t.title)}</td><td>${esc(t.artist)}</td><td></td></tr>`
+      ).join('\n        ');
+
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${esc(name)}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: #f7f6f2; color: #1a1a18; min-height: 100vh; padding: 0 0 4rem; }
+    header { padding: 3rem 2rem 2.5rem; max-width: 760px; margin: 0 auto; border-bottom: 1px solid rgba(0,0,0,0.08); margin-bottom: 2rem; }
+    .eyebrow { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #9e9b94; margin-bottom: 1rem; }
+    h1 { font-size: 2.5rem; font-weight: 300; letter-spacing: -0.03em; color: #0a0a0a; margin-bottom: .5rem; }
+    .meta { font-size: 13px; color: #6b6860; }
+    .meta span { margin: 0 8px; opacity: .4; }
+    main { max-width: 760px; margin: 0 auto; padding: 0 2rem; }
+    .table-wrap { background: white; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th { font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #9e9b94; padding: 10px 16px; text-align: left; background: #f7f6f2; border-bottom: 1px solid rgba(0,0,0,0.06); font-weight: 400; }
+    td { padding: 9px 16px; font-size: 13px; border-bottom: 1px solid rgba(0,0,0,0.04); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    td:first-child { color: #9e9b94; font-family: 'DM Mono', monospace; font-size: 11px; width: 50px; }
+    td:nth-child(2) { width: 48%; color: #1a1a18; }
+    td:nth-child(3) { color: #6b6860; }
+    td:nth-child(4) { color: #9e9b94; font-style: italic; font-size: 12px; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f7f6f2; }
+    footer { max-width: 760px; margin: 2rem auto 0; padding: 0 2rem; font-family: 'DM Mono', monospace; font-size: 11px; color: #9e9b94; }
+    @media (max-width: 520px) { h1 { font-size: 1.6rem; } header, main, footer { padding-left: 1.25rem; padding-right: 1.25rem; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">Playlist export</div>
+    <h1>${esc(name)}</h1>
+    <div class="meta">
+      ${tracks.length.toLocaleString()} songs
+      <span>·</span>
+      exported ${date}
+    </div>
+  </header>
+  <main>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Song</th><th>Artist</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+        ${rows}
+        </tbody>
+      </table>
+    </div>
+  </main>
+  <footer>
+    <p style="margin-top: 1.5rem">Created with Playlist Exporter &nbsp;·&nbsp; Not affiliated with Spotify</p>
+  </footer>
+</body>
+</html>`;
+      download(name + '.html', html, 'text/html;charset=utf-8;');
+    }
+
+    function copyToClipboard(btn) {
+      const name = getPlaylistName();
+      const lines = [name, ''];
+      tracks.forEach((t, i) => {
+        lines.push(`${i + 1}. ${t.title}${t.artist ? ' — ' + t.artist : ''}`);
+      });
+      lines.push('', `${tracks.length} songs`);
+      navigator.clipboard.writeText(lines.join('\n')).then(() => {
+        const nameEl = btn.querySelector('.export-btn-name');
+        const orig = nameEl.textContent;
+        nameEl.textContent = 'Copied!';
+        setTimeout(() => { nameEl.textContent = orig; }, 2000);
+      });
+    }
+
+    function download(filename, content, type) {
+      const blob = new Blob(['\uFEFF' + content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function clearAll() {
+      document.getElementById('paste-input').value = '';
+      document.getElementById('playlist-name').value = '';
+      document.getElementById('results').style.display = 'none';
+      tracks = [];
+    }
+
+    function loadDemo() {
+      document.getElementById('playlist-name').value = 'Road trip 2024';
+      document.getElementById('paste-input').value = [
+        'Flume - Never Be Like You (feat. Kai)',
+        'Tame Impala - The Less I Know the Better',
+        'Caribou - Can\'t Do Without You',
+        'Four Tet - Two Thousand and Seventeen',
+        'Jamie xx - Loud Places',
+        'Radiohead - Lotus Flower',
+        'LCD Soundsystem - Dance Yrself Clean',
+        'Hot Chip - One Life Stand',
+        'Daft Punk - Get Lucky (feat. Pharrell Williams)',
+        'Arcade Fire - We Exist',
+        'Bon Iver - Holocene',
+        'Beach House - Space Song',
+        'Tycho - Awake',
+        'Bonobo - Kong',
+        'Bicep - Glue',
+        'Rival Consoles - Recovery',
+        'Jon Hopkins - Open Eye Signal',
+        'Floating Points - Silhouettes (I, II & III)',
+        'Nicolas Jaar - Space Is Only Noise If You Can See',
+        'James Blake - The Wilhelm Scream'
+      ].join('\n');
+      parsePlaylist();
+    }
+  </script>
+</body>
+</html>
